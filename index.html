@@ -15,28 +15,29 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         ios: {
-                            bg: '#F8F9FB',
+                            bg: '#F2F2F7',
                             card: '#FFFFFF',
-                            text: '#1D1D1F',
-                            subtext: '#86868B',
+                            text: '#1C1C1E',
+                            subtext: '#8E8E93',
                             blue: '#007AFF',
-                            purple: '#AF52DE',
                             green: '#34C759',
                             red: '#FF3B30',
                             orange: '#FF9500',
+                            purple: '#AF52DE'
                         }
                     },
                     fontFamily: {
-                        sans: ['Inter', '-apple-system', 'sans-serif'],
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'ios': '0 4px 24px rgba(0,0,0,0.04)',
+                        'ios-sm': '0 1px 8px rgba(0,0,0,0.04)'
                     }
                 }
             }
@@ -45,318 +46,422 @@
 
     <style>
         body {
-            background-color: #F8F9FB;
+            background-color: #F2F2F7;
             -webkit-tap-highlight-color: transparent;
-            font-family: 'Inter', sans-serif;
-            letter-spacing: -0.01em;
-            color: #1D1D1F;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
         }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
-        .app-title-gradient {
-            font-family: 'Inter', sans-serif;
-            font-weight: 900;
-            letter-spacing: -0.05em;
-            background: linear-gradient(135deg, #007AFF 0%, #AF52DE 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1.1;
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
         }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
         
         .progress-ring {
-            transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: stroke-dashoffset 0.35s;
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
         }
 
-        .card-shadow {
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+        /* Markdown-like bolding support */
+        .ai-text b, .ai-text strong {
+            font-weight: 700;
+            color: #000;
         }
-
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .nav-active {
-            color: #007AFF;
-            transform: scale(1.1);
-        }
-
-        /* Custom scrollbar hide */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo, useEffect } = React;
+        const { useState, useEffect, useMemo } = React;
 
-        const Icons = {
-            Home: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-            Reminders: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
-            Calendar: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-            Check: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-            Plus: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-            Trash: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
-            ChevronRight: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        // --- GEMINI API INTEGRATION ---
+        const apiKey = ""; 
+        
+        const callGemini = async (prompt) => {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            let retries = 0;
+            const maxRetries = 5;
+
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            systemInstruction: { parts: [{ text: "You are a supportive student wellness coach. Respond exclusively in English. Keep responses concise, encouraging, and focused on student mental health. ALWAYS use double asterisks **like this** to BOLD the specific actionable steps, keywords, and tips so they stand out. Use a gentle and friendly tone." }] }
+                        })
+                    });
+                    if (!response.ok) throw new Error('API Error');
+                    const data = await response.json();
+                    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble thinking right now. Please try again.";
+                    
+                    // Simple regex to convert **bold** to <b>tags for HTML rendering
+                    return text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                } catch (error) {
+                    retries++;
+                    const delay = Math.pow(2, retries) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+            return "Connection error. Please check your signal.";
         };
 
-        const App = () => {
-            const [view, setView] = useState('welcome');
-            
-            // --- STATE: HABITS ---
-            const [habits, setHabits] = useState([
-                { id: 1, name: "Drink 2L Water", done: false },
-                { id: 2, name: "Morning Stretch", done: true },
-                { id: 3, name: "Read for 15 mins", done: false }
-            ]);
-            const [habitInput, setHabitInput] = useState("");
+        // --- ICONS ---
+        const Icons = {
+            Home: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+            Smile: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
+            Calendar: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            CheckCircle: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            Bell: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+            Sparkles: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/></svg>,
+            Plus: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Trash: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            Loader: () => <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /></svg>,
+            Trophy: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55.47.98.97 1.21C11.47 18.44 12 19 12 19s.53-.56 1.03-.79c.5-.23.97-.66.97-1.21v-2.34"/><path d="M12 4c-3 0-4 1-4 4v5c0 3 2 5 4 5s4-2 4-5V8c0-3-1-4-4-4Z"/></svg>,
+            Brain: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.54Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.54Z"/></svg>
+        };
 
-            // --- STATE: REMINDERS ---
-            const [reminders, setReminders] = useState([
-                { id: 1, text: "Call Mom", done: false },
-                { id: 2, text: "Grocery shopping", done: false }
-            ]);
-            const [reminderInput, setReminderInput] = useState("");
+        // --- LOADING SCREEN ---
+        const LoadingScreen = ({ onComplete }) => {
+            const [fading, setFading] = useState(false);
+            useEffect(() => {
+                const timer1 = setTimeout(() => setFading(true), 2500);
+                const timer2 = setTimeout(onComplete, 3000);
+                return () => { clearTimeout(timer1); clearTimeout(timer2); };
+            }, [onComplete]);
 
-            // --- STATE: CALENDAR ---
+            return (
+                <div className={`fixed inset-0 bg-ios-bg flex flex-col items-center justify-center z-50 ${fading ? 'fade-out' : 'fade-in'}`}>
+                    <div className="w-16 h-16 border-4 border-ios-blue border-t-transparent rounded-full animate-spin mb-8"></div>
+                    <h1 className="text-2xl font-semibold text-ios-text slide-up">Good day!</h1>
+                    <p className="text-ios-subtext mt-2 slide-up" style={{ animationDelay: '0.1s' }}>How are you today?</p>
+                </div>
+            );
+        };
+
+        // --- DASHBOARD ---
+        const HomeView = ({ setView, habitStats }) => {
+            const [quote, setQuote] = useState("Small steps lead to big changes.");
+            const [loading, setLoading] = useState(false);
+
+            const refreshMotivation = async () => {
+                setLoading(true);
+                const result = await callGemini("Generate a short, powerful 1-sentence motivation quote for a student who is building new habits. Bold the most important word.");
+                setQuote(result);
+                setLoading(false);
+            };
+
+            return (
+                <div className="space-y-6 slide-up pb-24">
+                    <header className="pt-4 flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-bold text-ios-text">Dashboard</h1>
+                            <p className="text-ios-subtext mt-1">Your progress at a glance</p>
+                        </div>
+                    </header>
+                    
+                    <div className="bg-white rounded-3xl p-6 shadow-ios-sm flex items-center justify-between">
+                        <div className="space-y-1">
+                            <p className="text-ios-subtext text-xs font-bold uppercase tracking-wider">Today's Progress</p>
+                            <h2 className="text-2xl font-bold text-ios-text">{habitStats.percent}% Done</h2>
+                            <p className="text-ios-subtext text-sm">{habitStats.completed}/{habitStats.total} habits completed</p>
+                        </div>
+                        <div className="relative w-16 h-16">
+                            <svg className="w-full h-full" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="16" fill="none" stroke="#E5E7EB" strokeWidth="4"></circle>
+                                <circle cx="18" cy="18" r="16" fill="none" stroke="#007AFF" strokeWidth="4" strokeDasharray="100 100" strokeDashoffset={100 - habitStats.percent} strokeLinecap="round" className="progress-ring"></circle>
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-ios-blue">{habitStats.percent}%</div>
+                        </div>
+                    </div>
+
+                    <div className="bg-ios-blue rounded-3xl p-6 text-white shadow-lg overflow-hidden relative">
+                        <div className="relative z-10">
+                            <h2 className="text-xl font-semibold flex items-center gap-2">Morning Motivation</h2>
+                            <p className="text-white/80 mt-2 text-sm italic ai-text" dangerouslySetInnerHTML={{ __html: loading ? "Thinking..." : quote }}></p>
+                            <button onClick={refreshMotivation} className="mt-4 bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-xs flex items-center gap-1 transition-all"><Icons.Sparkles /> ✨ New Spark</button>
+                        </div>
+                        <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div onClick={() => setView('habits')} className="bg-white p-5 rounded-3xl shadow-ios-sm cursor-pointer active:scale-95 transition-transform">
+                            <div className="bg-ios-green/10 text-ios-green w-10 h-10 rounded-full flex items-center justify-center mb-3"><Icons.Trophy /></div>
+                            <h3 className="font-semibold text-ios-text">Habits</h3>
+                            <p className="text-xs text-ios-subtext mt-1">{habitStats.total - habitStats.completed} remaining</p>
+                        </div>
+                        <div onClick={() => setView('calendar')} className="bg-white p-5 rounded-3xl shadow-ios-sm cursor-pointer active:scale-95 transition-transform">
+                            <div className="bg-ios-orange/10 text-ios-orange w-10 h-10 rounded-full flex items-center justify-center mb-3"><Icons.Calendar /></div>
+                            <h3 className="font-semibold text-ios-text">Calendar</h3>
+                            <p className="text-xs text-ios-subtext mt-1">View schedule</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MOOD TRACKER ---
+        const MoodTrackerView = () => {
+            const [selectedMood, setSelectedMood] = useState(null);
+            const [aiAdvice, setAiAdvice] = useState("");
+            const [isLoading, setIsLoading] = useState(false);
+
+            const handleMoodClick = async (emoji, label) => {
+                setSelectedMood(emoji);
+                setIsLoading(true);
+                
+                let prompt = "";
+                if (label === 'Stressed' || label === 'Sad') {
+                    prompt = `The student is feeling ${label} (${emoji}). Provide a warm response and 3 practical, immediate self-care suggestions. BOLD the most critical verbs or steps in each suggestion using **bold** notation.`;
+                } else {
+                    prompt = `The student is feeling ${label} (${emoji}). Give a very short, warm wellness tip. BOLD the main action using **bold** notation.`;
+                }
+
+                const advice = await callGemini(prompt);
+                setAiAdvice(advice);
+                setIsLoading(false);
+            };
+
+            return (
+                <div className="space-y-6 slide-up pb-24">
+                    <header className="pt-4"><h1 className="text-3xl font-bold text-ios-text">Mood Tracker</h1><p className="text-ios-subtext mt-1">Check-in with yourself</p></header>
+                    <div className="bg-white rounded-3xl p-6 shadow-ios-sm flex justify-around">
+                        {[{ emoji: '🤩', label: 'Fantastic' }, { emoji: '😊', label: 'Good' }, { emoji: '😐', label: 'Okay' }, { emoji: '😔', label: 'Sad' }, { emoji: '😫', label: 'Stressed' }].map(item => (
+                            <button key={item.emoji} onClick={() => handleMoodClick(item.emoji, item.label)} className={`text-3xl transition-all active:scale-90 ${selectedMood === item.emoji ? 'scale-125' : 'grayscale-[0.5]'}`}>{item.emoji}</button>
+                        ))}
+                    </div>
+                    {selectedMood && (
+                        <div className={`bg-white rounded-3xl p-6 shadow-ios-sm border-l-4 fade-in ${selectedMood === '😫' || selectedMood === '😔' ? 'border-ios-red' : 'border-ios-blue'}`}>
+                            <h3 className="font-semibold text-ios-text mb-3 flex items-center gap-2">
+                                {selectedMood === '😫' || selectedMood === '😔' ? <><Icons.Brain /> 🆘 Quick Support</> : <><Icons.Sparkles /> ✨ AI Coach</>}
+                            </h3>
+                            {isLoading ? (
+                                <div className="flex items-center gap-2 text-ios-subtext text-sm"><Icons.Loader /> Thinking...</div>
+                            ) : (
+                                <div className="text-sm text-ios-text leading-relaxed whitespace-pre-line ai-text" dangerouslySetInnerHTML={{ __html: aiAdvice }}></div>
+                            )}
+                        </div>
+                    )}
+                    
+                    {(selectedMood === '😫' || selectedMood === '😔') && !isLoading && (
+                        <div className="bg-ios-orange/10 p-4 rounded-2xl flex items-start gap-3 slide-up">
+                            <span className="text-lg">💡</span>
+                            <p className="text-xs text-ios-text/80 italic">Reminder: It's okay to take a break. Your wellbeing matters more than your workload.</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- CALENDAR & TASKS ---
+        const CalendarView = ({ tasks, setTasks }) => {
             const [selectedDate, setSelectedDate] = useState(new Date().getDate());
-            const [events, setEvents] = useState({
-                8: [{ id: 101, title: "Doctor Appointment", time: "10:30 AM" }],
-                15: [{ id: 102, title: "Project Launch", time: "2:00 PM" }]
-            });
-            const [eventInput, setEventInput] = useState("");
+            const [newTask, setNewTask] = useState("");
+
+            const daysInMonth = 30;
+            const dayTasks = useMemo(() => tasks.filter(t => t.date === selectedDate), [tasks, selectedDate]);
+
+            const addTask = () => {
+                if (!newTask.trim()) return;
+                setTasks([...tasks, { id: Date.now(), text: newTask, date: selectedDate, done: false }]);
+                setNewTask("");
+            };
+
+            const toggleTask = (id) => {
+                setTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
+            };
+
+            const deleteTask = (id) => {
+                setTasks(tasks.filter(t => t.id !== id));
+            };
+
+            return (
+                <div className="space-y-6 slide-up pb-32">
+                    <header className="pt-4"><h1 className="text-3xl font-bold text-ios-text">Calendar</h1><p className="text-ios-subtext mt-1">Manage your schedule</p></header>
+                    <div className="bg-white rounded-3xl p-6 shadow-ios-sm">
+                        <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-ios-subtext mb-4">
+                            {['S','M','T','W','T','F','S'].map(d => <span key={d}>{d}</span>)}
+                        </div>
+                        <div className="grid grid-cols-7 gap-2 text-center">
+                            {Array.from({length: daysInMonth}, (_, i) => {
+                                const day = i + 1;
+                                const hasTasks = tasks.some(t => t.date === day);
+                                return (
+                                    <button key={day} onClick={() => setSelectedDate(day)} className={`py-2 text-sm rounded-full relative ${selectedDate === day ? 'bg-ios-blue text-white font-bold' : 'text-ios-text'}`}>
+                                        {day}
+                                        {hasTasks && <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${selectedDate === day ? 'bg-white' : 'bg-ios-blue'}`}></span>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="space-y-4 fade-in">
+                        <div className="flex gap-2">
+                            <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addTask()} placeholder="New task..." className="flex-1 bg-white border-none rounded-2xl px-4 py-3 shadow-ios-sm text-sm outline-none" />
+                            <button onClick={addTask} className="bg-ios-blue text-white p-3 rounded-2xl shadow-lg"><Icons.Plus /></button>
+                        </div>
+                        <div className="space-y-2">
+                            {dayTasks.map(t => (
+                                <div key={t.id} className="bg-white p-4 rounded-2xl shadow-ios-sm flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => toggleTask(t.id)} className={`w-5 h-5 rounded-full border-2 ${t.done ? 'bg-ios-green border-ios-green' : 'border-gray-200'}`}>{t.done && <Icons.CheckCircle />}</button>
+                                        <span className={`text-sm ${t.done ? 'line-through text-ios-subtext' : ''}`}>{t.text}</span>
+                                    </div>
+                                    <button onClick={() => deleteTask(t.id)} className="text-ios-red/40"><Icons.Trash /></button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- HABIT TRACKER ---
+        const HabitTrackerView = ({ habits, setHabits, habitStats }) => {
+            const [newHabit, setNewHabit] = useState("");
+            const [aiSuggestion, setAiSuggestion] = useState("");
+            const [isLoading, setIsLoading] = useState(false);
+
+            const addHabit = () => {
+                if (!newHabit.trim()) return;
+                setHabits([...habits, { id: Date.now(), name: newHabit, done: false }]);
+                setNewHabit("");
+            };
+
+            const toggleHabit = (id) => {
+                setHabits(habits.map(h => h.id === id ? { ...h, done: !h.done } : h));
+            };
+
+            const deleteHabit = (id) => {
+                setHabits(habits.filter(h => h.id !== id));
+            };
+
+            const getWeeklyStrategy = async () => {
+                setIsLoading(true);
+                const habitNames = habits.map(h => h.name).join(", ");
+                const result = await callGemini(`I am tracking these habits: ${habitNames}. Give me one quick strategy to stay consistent. BOLD the most important part of the tip using **bold** notation.`);
+                setAiSuggestion(result);
+                setIsLoading(false);
+            };
+
+            return (
+                <div className="space-y-6 slide-up pb-32">
+                    <header className="pt-4">
+                        <h1 className="text-3xl font-bold text-ios-text">Habit Tracker</h1>
+                        <p className="text-ios-subtext mt-1">Build your routine</p>
+                    </header>
+
+                    <div className="bg-white rounded-3xl p-6 shadow-ios-sm flex items-center gap-6">
+                        <div className="relative w-20 h-20">
+                            <svg className="w-full h-full" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="16" fill="none" stroke="#F2F2F7" strokeWidth="4"></circle>
+                                <circle cx="18" cy="18" r="16" fill="none" stroke="#34C759" strokeWidth="4" strokeDasharray="100 100" strokeDashoffset={100 - habitStats.percent} strokeLinecap="round" className="progress-ring"></circle>
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-xs font-bold text-ios-green">{habitStats.percent}%</span>
+                            </div>
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-bold text-ios-text">Daily Progress</h3>
+                            <p className="text-sm text-ios-subtext leading-tight mt-1">You've completed {habitStats.completed} of {habitStats.total} habits today.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <input type="text" value={newHabit} onChange={(e) => setNewHabit(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addHabit()} placeholder="New habit..." className="flex-1 bg-white border-none rounded-2xl px-4 py-3 shadow-ios-sm text-sm outline-none" />
+                        <button onClick={addHabit} className="bg-ios-green text-white p-3 rounded-2xl shadow-lg active:scale-95 transition-transform"><Icons.Plus /></button>
+                    </div>
+
+                    <div className="space-y-3">
+                        {habits.map(habit => (
+                            <div key={habit.id} className="bg-white p-4 rounded-2xl shadow-ios-sm flex items-center justify-between group">
+                                <div className="flex items-center gap-4">
+                                    <button onClick={() => toggleHabit(habit.id)} className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${habit.done ? 'bg-ios-green border-ios-green' : 'border-gray-200'}`}>{habit.done && <span className="text-white"><Icons.CheckCircle /></span>}</button>
+                                    <span className={`font-medium text-sm ${habit.done ? 'text-ios-subtext line-through' : 'text-ios-text'}`}>{habit.name}</span>
+                                </div>
+                                <button onClick={() => deleteHabit(habit.id)} className="opacity-0 group-hover:opacity-100 p-2 text-ios-red/40 transition-opacity"><Icons.Trash /></button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="pt-4">
+                        <button onClick={getWeeklyStrategy} className="w-full bg-white border border-ios-blue text-ios-blue py-4 rounded-2xl flex items-center justify-center gap-2 font-bold active:scale-95 transition-all shadow-ios-sm">{isLoading ? <Icons.Loader /> : <Icons.Sparkles />} ✨ Weekly AI Strategy</button>
+                        {aiSuggestion && <div className="mt-4 bg-ios-blue/5 border border-ios-blue/20 p-5 rounded-3xl fade-in"><p className="text-sm text-ios-text leading-relaxed ai-text" dangerouslySetInnerHTML={{ __html: aiSuggestion }}></p></div>}
+                    </div>
+                </div>
+            );
+        };
+
+        const RemindersView = () => (
+            <div className="space-y-6 slide-up pb-24">
+                <header className="pt-4"><h1 className="text-3xl font-bold text-ios-text">Alerts</h1><p className="text-ios-subtext mt-1">Don't miss a beat</p></header>
+                <div className="bg-white rounded-3xl p-6 shadow-ios-sm">
+                    <p className="text-sm text-ios-subtext">No new alerts at the moment.</p>
+                </div>
+            </div>
+        );
+
+        const App = () => {
+            const [isLoading, setIsLoading] = useState(true);
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [currentView, setCurrentView] = useState('home');
+            
+            const [tasks, setTasks] = useState([{ id: 1, text: "Group meeting", date: 8, done: false }]);
+            const [habits, setHabits] = useState([
+                { id: 1, name: "Drink 8 Glasses of Water", done: false },
+                { id: 2, name: "Morning Stretch", done: true }
+            ]);
 
             const habitStats = useMemo(() => {
-                const done = habits.filter(h => h.done).length;
-                return { done, total: habits.length, pct: habits.length ? Math.round((done/habits.length)*100) : 0 };
+                const total = habits.length;
+                const completed = habits.filter(h => h.done).length;
+                const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+                return { total, completed, percent };
             }, [habits]);
 
-            const daysInMonth = 30; // Mock for current month
+            if (isLoading) return <LoadingScreen onComplete={() => setIsLoading(false)} />;
 
-            if (view === 'welcome') return (
-                <div className="h-screen flex flex-col items-center justify-center bg-white px-10 text-center fade-in">
-                    <div className="mb-10 w-24 h-24 bg-gradient-to-br from-ios-blue to-ios-purple rounded-[28%] shadow-2xl flex items-center justify-center text-white text-5xl transform rotate-3">
-                        <Icons.Check />
+            if (!isAuthenticated) return (
+                <div className="min-h-screen flex items-center justify-center p-6 bg-ios-bg text-center">
+                    <div className="w-full max-w-sm space-y-8 slide-up">
+                        <div className="space-y-2">
+                            <h1 className="text-4xl font-bold text-ios-text tracking-tight">My COMPanion</h1>
+                            <p className="text-ios-subtext">Your personalized AI wellness & productivity coach</p>
+                        </div>
+                        <button onClick={() => setIsAuthenticated(true)} className="bg-ios-blue text-white w-full py-4 rounded-2xl font-bold shadow-lg">Get Started</button>
                     </div>
-                    <h1 className="text-[52px] app-title-gradient mb-4">My COMPanion</h1>
-                    <p className="text-ios-subtext text-lg mb-12 px-4 font-medium leading-relaxed">Your world, organized and centered.</p>
-                    <button onClick={() => setView('home')} className="w-full bg-ios-text text-white py-5 rounded-[22px] font-bold text-xl active:scale-95 transition-all shadow-xl">
-                        Open Dashboard
-                    </button>
                 </div>
             );
 
             return (
-                <div className="min-h-screen bg-ios-bg pb-32">
-                    <div className="max-w-md mx-auto px-6 pt-12">
-                        
-                        {/* HOME VIEW */}
-                        {view === 'home' && (
-                            <div className="fade-in">
-                                <h1 className="text-[36px] font-extrabold mb-8 tracking-tight">Dashboard</h1>
-                                
-                                <div className="bg-white rounded-[32px] p-6 card-shadow mb-6 flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <p className="text-[11px] font-black text-ios-subtext uppercase tracking-widest">Habit Progress</p>
-                                        <h2 className="text-3xl font-extrabold text-ios-text">{habitStats.pct}%</h2>
-                                        <p className="text-sm text-ios-subtext font-semibold">{habitStats.done} of {habitStats.total} reached</p>
-                                    </div>
-                                    <div className="relative w-16 h-16">
-                                        <svg className="w-full h-full" viewBox="0 0 36 36">
-                                            <circle cx="18" cy="18" r="16" fill="none" stroke="#F2F2F7" strokeWidth="4"></circle>
-                                            <circle cx="18" cy="18" r="16" fill="none" stroke="url(#grad1)" strokeWidth="4" strokeDasharray="100 100" strokeDashoffset={100 - habitStats.pct} strokeLinecap="round" className="progress-ring"></circle>
-                                            <defs>
-                                                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" stopColor="#007AFF" />
-                                                    <stop offset="100%" stopColor="#AF52DE" />
-                                                </linearGradient>
-                                            </defs>
-                                        </svg>
-                                    </div>
-                                </div>
+                <div className="min-h-screen bg-ios-bg text-ios-text flex justify-center">
+                    <main className="w-full max-w-md px-6 h-screen overflow-y-auto">
+                        {currentView === 'home' && <HomeView setView={setCurrentView} habitStats={habitStats} />}
+                        {currentView === 'mood' && <MoodTrackerView />}
+                        {currentView === 'calendar' && <CalendarView tasks={tasks} setTasks={setTasks} />}
+                        {currentView === 'habits' && <HabitTrackerView habits={habits} setHabits={setHabits} habitStats={habitStats} />}
+                        {currentView === 'reminders' && <RemindersView />}
+                    </main>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button onClick={() => setView('reminders')} className="bg-white p-5 rounded-[28px] card-shadow text-left active:scale-95 transition-transform">
-                                        <div className="w-10 h-10 rounded-full bg-ios-orange/10 text-ios-orange flex items-center justify-center mb-3"><Icons.Reminders /></div>
-                                        <p className="text-[10px] font-black text-ios-subtext uppercase tracking-widest">Tasks</p>
-                                        <h4 className="text-xl font-extrabold">{reminders.filter(r => !r.done).length} Pending</h4>
-                                    </button>
-                                    <button onClick={() => setView('calendar')} className="bg-white p-5 rounded-[28px] card-shadow text-left active:scale-95 transition-transform">
-                                        <div className="w-10 h-10 rounded-full bg-ios-blue/10 text-ios-blue flex items-center justify-center mb-3"><Icons.Calendar /></div>
-                                        <p className="text-[10px] font-black text-ios-subtext uppercase tracking-widest">Next Event</p>
-                                        <h4 className="text-xl font-extrabold">{events[selectedDate]?.[0]?.time || "Free day"}</h4>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* REMINDERS VIEW */}
-                        {view === 'reminders' && (
-                            <div className="fade-in">
-                                <h1 className="text-[36px] font-extrabold mb-8 tracking-tight">Reminders</h1>
-                                <div className="flex gap-3 mb-6">
-                                    <input 
-                                        value={reminderInput} 
-                                        onChange={(e) => setReminderInput(e.target.value)}
-                                        placeholder="I need to..." 
-                                        className="flex-1 bg-white rounded-[20px] px-5 py-4 card-shadow outline-none text-sm font-semibold"
-                                    />
-                                    <button 
-                                        onClick={() => {if(reminderInput) setReminders([...reminders, {id: Date.now(), text: reminderInput, done: false}]); setReminderInput("");}}
-                                        className="bg-ios-blue text-white p-4 rounded-[20px] shadow-lg active:scale-90"
-                                    ><Icons.Plus /></button>
-                                </div>
-                                <div className="space-y-3">
-                                    {reminders.map(r => (
-                                        <div key={r.id} className="bg-white p-5 rounded-[24px] card-shadow flex items-center justify-between group">
-                                            <div className="flex items-center gap-4">
-                                                <button 
-                                                    onClick={() => setReminders(reminders.map(i => i.id === r.id ? {...i, done: !i.done} : i))}
-                                                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${r.done ? 'bg-ios-blue border-ios-blue' : 'border-gray-200'}`}
-                                                >
-                                                    {r.done && <div className="text-white scale-50"><Icons.Check /></div>}
-                                                </button>
-                                                <span className={`text-[15px] font-bold ${r.done ? 'text-ios-subtext line-through' : 'text-ios-text'}`}>{r.text}</span>
-                                            </div>
-                                            <button onClick={() => setReminders(reminders.filter(i => i.id !== r.id))} className="text-ios-red/20 hover:text-ios-red"><Icons.Trash /></button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* CALENDAR VIEW */}
-                        {view === 'calendar' && (
-                            <div className="fade-in">
-                                <h1 className="text-[36px] font-extrabold mb-8 tracking-tight">Calendar</h1>
-                                <div className="bg-white rounded-[32px] p-6 card-shadow mb-6">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h3 className="font-extrabold text-lg">April 2024</h3>
-                                        <div className="flex gap-4 text-ios-blue font-bold text-sm">
-                                            <span>Prev</span><span>Next</span>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-black text-ios-subtext mb-4">
-                                        {['S','M','T','W','T','F','S'].map(d => <div key={d}>{d}</div>)}
-                                    </div>
-                                    <div className="grid grid-cols-7 gap-2 text-center">
-                                        {[...Array(daysInMonth)].map((_, i) => {
-                                            const day = i + 1;
-                                            const hasEvent = events[day];
-                                            return (
-                                                <button 
-                                                    key={i} 
-                                                    onClick={() => setSelectedDate(day)}
-                                                    className={`relative py-3 text-xs font-bold rounded-xl transition-all ${selectedDate === day ? 'bg-ios-blue text-white shadow-lg scale-110 z-10' : 'text-ios-text hover:bg-ios-bg'}`}
-                                                >
-                                                    {day}
-                                                    {hasEvent && <div className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${selectedDate === day ? 'bg-white' : 'bg-ios-blue'}`}></div>}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-end px-2">
-                                        <h4 className="font-black text-ios-subtext text-[10px] uppercase tracking-widest">Events for April {selectedDate}</h4>
-                                        <button onClick={() => {
-                                            const title = prompt("Event Title:");
-                                            const time = prompt("Event Time (e.g. 2:00 PM):");
-                                            if(title && time) {
-                                                setEvents({...events, [selectedDate]: [...(events[selectedDate] || []), {id: Date.now(), title, time}]});
-                                            }
-                                        }} className="text-ios-blue text-xs font-bold">+ Add Event</button>
-                                    </div>
-                                    
-                                    {(events[selectedDate] || []).length > 0 ? (
-                                        events[selectedDate].map(ev => (
-                                            <div key={ev.id} className="bg-white p-5 rounded-[24px] card-shadow flex items-center justify-between fade-in border-l-4 border-ios-blue">
-                                                <div>
-                                                    <p className="text-xs font-black text-ios-blue mb-0.5">{ev.time}</p>
-                                                    <p className="font-bold text-ios-text">{ev.title}</p>
-                                                </div>
-                                                <button onClick={() => setEvents({...events, [selectedDate]: events[selectedDate].filter(e => e.id !== ev.id)})} className="text-ios-red/20"><Icons.Trash /></button>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="bg-ios-bg border-2 border-dashed border-gray-200 p-8 rounded-[24px] text-center">
-                                            <p className="text-ios-subtext text-sm font-medium">No events scheduled.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* HABITS VIEW */}
-                        {view === 'habits' && (
-                            <div className="fade-in">
-                                <div className="flex justify-between items-center mb-8">
-                                    <h1 className="text-[36px] font-extrabold tracking-tight">Daily Habits</h1>
-                                    <div className="w-12 h-12 rounded-2xl bg-ios-purple/10 text-ios-purple flex items-center justify-center font-black text-sm">
-                                        {habitStats.pct}%
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3 mb-8">
-                                    <input 
-                                        value={habitInput} 
-                                        onChange={(e) => setHabitInput(e.target.value)}
-                                        placeholder="New daily habit..." 
-                                        className="flex-1 bg-white rounded-[20px] px-5 py-4 card-shadow outline-none text-sm font-semibold"
-                                    />
-                                    <button 
-                                        onClick={() => {if(habitInput) setHabits([...habits, {id: Date.now(), name: habitInput, done: false}]); setHabitInput("");}}
-                                        className="bg-ios-purple text-white p-4 rounded-[20px] shadow-lg"
-                                    ><Icons.Plus /></button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {habits.map(h => (
-                                        <div 
-                                            key={h.id} 
-                                            onClick={() => setHabits(habits.map(item => item.id === h.id ? {...item, done: !item.done} : item))}
-                                            className={`bg-white p-5 rounded-[24px] card-shadow flex items-center justify-between cursor-pointer transition-all active:scale-95 ${h.done ? 'opacity-70' : ''}`}
-                                        >
-                                            <div className="flex items-center gap-5">
-                                                <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all ${h.done ? 'bg-gradient-to-br from-ios-blue to-ios-purple border-transparent shadow-md' : 'border-gray-100 bg-ios-bg'}`}>
-                                                    {h.done && <div className="text-white scale-75"><Icons.Check /></div>}
-                                                </div>
-                                                <span className={`text-[16px] font-bold tracking-tight ${h.done ? 'text-ios-subtext line-through' : 'text-ios-text'}`}>{h.name}</span>
-                                            </div>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); setHabits(habits.filter(i => i.id !== h.id)); }} 
-                                                className="text-ios-red/20 hover:text-ios-red p-2"
-                                            ><Icons.Trash /></button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                    </div>
-
-                    {/* NAVIGATION */}
-                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-sm glass-panel rounded-[32px] border border-white/20 py-4 px-6 flex justify-between z-50 shadow-2xl">
-                        <button onClick={() => setView('home')} className={`flex flex-col items-center transition-all ${view === 'home' ? 'nav-active' : 'text-ios-subtext opacity-60'}`}>
-                            <Icons.Home /><span className="text-[9px] mt-1.5 font-black uppercase tracking-widest">Home</span>
-                        </button>
-                        <button onClick={() => setView('reminders')} className={`flex flex-col items-center transition-all ${view === 'reminders' ? 'nav-active' : 'text-ios-subtext opacity-60'}`}>
-                            <Icons.Reminders /><span className="text-[9px] mt-1.5 font-black uppercase tracking-widest">Tasks</span>
-                        </button>
-                        <button onClick={() => setView('calendar')} className={`flex flex-col items-center transition-all ${view === 'calendar' ? 'nav-active' : 'text-ios-subtext opacity-60'}`}>
-                            <Icons.Calendar /><span className="text-[9px] mt-1.5 font-black uppercase tracking-widest">Date</span>
-                        </button>
-                        <button onClick={() => setView('habits')} className={`flex flex-col items-center transition-all ${view === 'habits' ? 'nav-active' : 'text-ios-subtext opacity-60'}`}>
-                            <div className="scale-90"><Icons.Check /></div><span className="text-[9px] mt-1.5 font-black uppercase tracking-widest">Goals</span>
-                        </button>
+                    <nav className="fixed bottom-0 w-full max-w-md glass-panel border-t border-gray-200 pb-8 pt-4 px-6 flex justify-between z-40">
+                        <button onClick={() => setCurrentView('home')} className={`flex flex-col items-center ${currentView === 'home' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Home /><span className="text-[10px] mt-1 font-medium">Home</span></button>
+                        <button onClick={() => setCurrentView('mood')} className={`flex flex-col items-center ${currentView === 'mood' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Smile /><span className="text-[10px] mt-1 font-medium">Mood</span></button>
+                        <button onClick={() => setCurrentView('calendar')} className={`flex flex-col items-center ${currentView === 'calendar' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Calendar /><span className="text-[10px] mt-1 font-medium">Calendar</span></button>
+                        <button onClick={() => setCurrentView('habits')} className={`flex flex-col items-center ${currentView === 'habits' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.CheckCircle /><span className="text-[10px] mt-1 font-medium">Habits</span></button>
+                        <button onClick={() => setCurrentView('reminders')} className={`flex flex-col items-center ${currentView === 'reminders' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Bell /><span className="text-[10px] mt-1 font-medium">Alerts</span></button>
                     </nav>
                 </div>
             );
