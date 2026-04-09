@@ -87,7 +87,7 @@
         const { useState, useEffect, useMemo } = React;
 
         // --- GEMINI API INTEGRATION ---
-        const apiKey = ""; 
+        const apiKey = "YOUR_GEMINI_API_KEY"; 
         
         const callGemini = async (prompt) => {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
@@ -415,58 +415,149 @@
         );
 
         const App = () => {
-            const [isLoading, setIsLoading] = useState(true);
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
-            const [currentView, setCurrentView] = useState('home');
+    const [isLoading, setIsLoading] = useState(true);
+
+    // ✅ AUTH STATES (ADDED)
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLogin, setIsLogin] = useState(true);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+
+    const [currentView, setCurrentView] = useState('home');
+    
+    const [tasks, setTasks] = useState([{ id: 1, text: "Group meeting", date: 8, done: false }]);
+    const [habits, setHabits] = useState([
+        { id: 1, name: "Drink 8 Glasses of Water", done: false },
+        { id: 2, name: "Morning Stretch", done: true }
+    ]);
+
+    // ✅ AUTO LOGIN
+    useEffect(() => {
+        const logged = localStorage.getItem("loggedIn");
+        if (logged === "true") {
+            setIsAuthenticated(true);
+        }
+    }, []);
+
+    // ✅ LOGIN / SIGNUP FUNCTION
+    const handleAuth = () => {
+        if (!email || !password) {
+            setError("Please fill all fields");
+            return;
+        }
+
+        const user = JSON.parse(localStorage.getItem("user"));
+
+        if (isLogin) {
+            if (!user || user.email !== email || user.password !== password) {
+                setError("Invalid email or password");
+                return;
+            }
+            localStorage.setItem("loggedIn", "true");
+            setIsAuthenticated(true);
+        } else {
+            localStorage.setItem("user", JSON.stringify({ email, password }));
+            setError("Account created! Please login.");
+            setIsLogin(true);
+        }
+    };
+
+    // ✅ LOGOUT
+    const logout = () => {
+        localStorage.removeItem("loggedIn");
+        setIsAuthenticated(false);
+    };
+
+    const habitStats = useMemo(() => {
+        const total = habits.length;
+        const completed = habits.filter(h => h.done).length;
+        const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+        return { total, completed, percent };
+    }, [habits]);
+
+    if (isLoading) return <LoadingScreen onComplete={() => setIsLoading(false)} />;
+
+    // ✅ REPLACED SCREEN (LOGIN + SIGNUP)
+    if (!isAuthenticated) return (
+        <div className="min-h-screen flex items-center justify-center p-6 bg-ios-bg">
+            <div className="w-full max-w-sm space-y-6 slide-up bg-white p-6 rounded-3xl shadow-ios">
+
+                <h1 className="text-2xl font-bold text-center text-ios-text">
+                    {isLogin ? "Login" : "Sign Up"}
+                </h1>
+
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-3 rounded-xl bg-gray-100 outline-none"
+                />
+
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full p-3 rounded-xl bg-gray-100 outline-none"
+                />
+
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                <button
+                    onClick={handleAuth}
+                    className="w-full bg-ios-blue text-white py-3 rounded-xl font-bold"
+                >
+                    {isLogin ? "Login" : "Create Account"}
+                </button>
+
+                <p className="text-center text-sm text-ios-subtext">
+                    {isLogin ? "No account?" : "Already have an account?"}
+                    <span
+                        onClick={() => {
+                            setIsLogin(!isLogin);
+                            setError("");
+                        }}
+                        className="text-ios-blue ml-1 cursor-pointer"
+                    >
+                        {isLogin ? "Sign up" : "Login"}
+                    </span>
+                </p>
+            </div>
+        </div>
+    );
+
+    // ✅ ORIGINAL APP (UNCHANGED)
+    return (
+        <div className="min-h-screen bg-ios-bg text-ios-text flex justify-center">
+            <main className="w-full max-w-md px-6 h-screen overflow-y-auto">
+                {currentView === 'home' && <HomeView setView={setCurrentView} habitStats={habitStats} />}
+                {currentView === 'mood' && <MoodTrackerView />}
+                {currentView === 'calendar' && <CalendarView tasks={tasks} setTasks={setTasks} />}
+                {currentView === 'habits' && <HabitTrackerView habits={habits} setHabits={setHabits} habitStats={habitStats} />}
+                {currentView === 'reminders' && <RemindersView />}
+
+                {/* ✅ LOGOUT BUTTON */}
+                <button
+                    onClick={logout}
+                    className="fixed top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-lg text-xs"
+                >
+                    Logout
+                </button>
+            </main>
+
+            <nav className="fixed bottom-0 w-full max-w-md glass-panel border-t border-gray-200 pb-8 pt-4 px-6 flex justify-between z-40">
+                <button onClick={() => setCurrentView('home')} className={`flex flex-col items-center ${currentView === 'home' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Home /><span className="text-[10px] mt-1 font-medium">Home</span></button>
+                <button onClick={() => setCurrentView('mood')} className={`flex flex-col items-center ${currentView === 'mood' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Smile /><span className="text-[10px] mt-1 font-medium">Mood</span></button>
+                <button onClick={() => setCurrentView('calendar')} className={`flex flex-col items-center ${currentView === 'calendar' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Calendar /><span className="text-[10px] mt-1 font-medium">Calendar</span></button>
+                <button onClick={() => setCurrentView('habits')} className={`flex flex-col items-center ${currentView === 'habits' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.CheckCircle /><span className="text-[10px] mt-1 font-medium">Habits</span></button>
+                <button onClick={() => setCurrentView('reminders')} className={`flex flex-col items-center ${currentView === 'reminders' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Bell /><span className="text-[10px] mt-1 font-medium">Alerts</span></button>
+            </nav>
+        </div>
+    );
+};
             
-            const [tasks, setTasks] = useState([{ id: 1, text: "Group meeting", date: 8, done: false }]);
-            const [habits, setHabits] = useState([
-                { id: 1, name: "Drink 8 Glasses of Water", done: false },
-                { id: 2, name: "Morning Stretch", done: true }
-            ]);
-
-            const habitStats = useMemo(() => {
-                const total = habits.length;
-                const completed = habits.filter(h => h.done).length;
-                const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
-                return { total, completed, percent };
-            }, [habits]);
-
-            if (isLoading) return <LoadingScreen onComplete={() => setIsLoading(false)} />;
-
-            if (!isAuthenticated) return (
-                <div className="min-h-screen flex items-center justify-center p-6 bg-ios-bg text-center">
-                    <div className="w-full max-w-sm space-y-8 slide-up">
-                        <div className="space-y-2">
-                            <h1 className="text-4xl font-bold text-ios-text tracking-tight">My COMPanion</h1>
-                            <p className="text-ios-subtext">Your personalized AI wellness & productivity coach</p>
-                        </div>
-                        <button onClick={() => setIsAuthenticated(true)} className="bg-ios-blue text-white w-full py-4 rounded-2xl font-bold shadow-lg">Get Started</button>
-                    </div>
-                </div>
-            );
-
-            return (
-                <div className="min-h-screen bg-ios-bg text-ios-text flex justify-center">
-                    <main className="w-full max-w-md px-6 h-screen overflow-y-auto">
-                        {currentView === 'home' && <HomeView setView={setCurrentView} habitStats={habitStats} />}
-                        {currentView === 'mood' && <MoodTrackerView />}
-                        {currentView === 'calendar' && <CalendarView tasks={tasks} setTasks={setTasks} />}
-                        {currentView === 'habits' && <HabitTrackerView habits={habits} setHabits={setHabits} habitStats={habitStats} />}
-                        {currentView === 'reminders' && <RemindersView />}
-                    </main>
-
-                    <nav className="fixed bottom-0 w-full max-w-md glass-panel border-t border-gray-200 pb-8 pt-4 px-6 flex justify-between z-40">
-                        <button onClick={() => setCurrentView('home')} className={`flex flex-col items-center ${currentView === 'home' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Home /><span className="text-[10px] mt-1 font-medium">Home</span></button>
-                        <button onClick={() => setCurrentView('mood')} className={`flex flex-col items-center ${currentView === 'mood' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Smile /><span className="text-[10px] mt-1 font-medium">Mood</span></button>
-                        <button onClick={() => setCurrentView('calendar')} className={`flex flex-col items-center ${currentView === 'calendar' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Calendar /><span className="text-[10px] mt-1 font-medium">Calendar</span></button>
-                        <button onClick={() => setCurrentView('habits')} className={`flex flex-col items-center ${currentView === 'habits' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.CheckCircle /><span className="text-[10px] mt-1 font-medium">Habits</span></button>
-                        <button onClick={() => setCurrentView('reminders')} className={`flex flex-col items-center ${currentView === 'reminders' ? 'text-ios-blue' : 'text-ios-subtext'}`}><Icons.Bell /><span className="text-[10px] mt-1 font-medium">Alerts</span></button>
-                    </nav>
-                </div>
-            );
-        };
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
